@@ -1,12 +1,18 @@
 <script>
-  import { appMode } from '$lib/stores.js';
-  
+  import { onMount, onDestroy } from 'svelte';
+  import { Motion } from '@capacitor/motion';
+
   let status = 'safe'; // 'safe', 'warning', 'trapped'
   let countdown = 10;
   let timer;
+  let motionListener;
 
-  // This simulates the earthquake detection
+  // Set a threshold for shake detection (m/s^2). This value may need tuning.
+  const SHAKE_THRESHOLD = 10; 
+
+  // This function is called when a significant shake is detected
   function triggerEarthquake() {
+    if (status !== 'safe') return; // Prevent re-triggering
     status = 'warning';
     countdown = 10;
     
@@ -25,6 +31,39 @@
     status = 'safe';
     countdown = 10;
   }
+
+  onMount(async () => {
+    try {
+      // Request permission for motion sensors on iOS 13+
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        const permission = await DeviceMotionEvent.requestPermission();
+        if (permission !== 'granted') {
+          console.error('Permission for motion sensors not granted.');
+          return;
+        }
+      }
+
+      motionListener = await Motion.addListener('accel', (event) => {
+        const { x, y, z } = event.acceleration;
+        const magnitude = Math.sqrt(x * x + y * y + z * z);
+        
+        if (magnitude > SHAKE_THRESHOLD) {
+          triggerEarthquake();
+        }
+      });
+    } catch (e) {
+      console.error("Failed to initialize motion sensors.", e);
+    }
+  });
+
+  onDestroy(() => {
+    if (motionListener) {
+      motionListener.remove();
+    }
+    if (timer) {
+      clearInterval(timer);
+    }
+  });
 </script>
 
 <div class="h-screen w-full flex flex-col items-center justify-center p-6 text-center transition-colors duration-700 ease-in-out"
@@ -40,9 +79,7 @@
       <h1 class="text-white text-3xl font-bold tracking-widest">SYSTEM ACTIVE</h1>
       <p class="text-gray-400">Monitoring Seismic Sensors...</p>
       
-      <button on:click={triggerEarthquake} class="mt-10 px-6 py-2 bg-gray-800 text-gray-500 rounded border border-gray-700 text-sm hover:text-white hover:border-white transition">
-        [DEMO: TRIGGER QUAKE]
-      </button>
+      
     </div>
   {/if}
 
