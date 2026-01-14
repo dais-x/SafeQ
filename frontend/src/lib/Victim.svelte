@@ -66,9 +66,9 @@
       <p class="text-xl">BLE Beacon Active</p>
       <p class="text-sm opacity-70">Power Saving Mode Enabled</p>
       
-      <button on:click={() => appMode.set('home')} class="fixed bottom-10 left-0 right-0 mx-auto text-red-200 text-sm underline">
-        Stop Signal (Rescued)
-      </button>
+<a href="/" class="fixed bottom-10 left-0 right-0 mx-auto text-red-200 text-sm underline text-center block">
+  Stop Signal (Rescued)
+</a>
     </div>
   {/if}
 </div>
